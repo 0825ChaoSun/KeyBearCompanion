@@ -1,0 +1,38 @@
+# Python/cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# IDE/local
+.idea/
+.vscode/
+user_data/
+
+# Heavy/generated build outputs
+build/
+dist/
+keybear_build_en/
+qinliang_build_en/
+qin_build_en/
+tk_qin_build_en/
+qin_venv/
+packaging_tools/
+
+# Keep only the qinliang lightweight release zip, not extracted runtime folders
+qinliang/qin/KeyBearCompanion/
+qinliang/qin/KeyBearCompanion-tk-qin-win64.zip
+qinliang/KeyBearCompanion.exe
+
+# Raw/private source art and old large previews
+yier_assets/
+一二形象/
+assets/source/
+assets/cat*.png
+keybear_assets_preview.png
+keybear_state_preview.png
+PixPin_*.mp4
+
+# Smoke-test leftovers
+PackagingSmoke.spec
+packaging_smoke.py
+tmp_settings_check.json
