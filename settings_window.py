@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from settings_manager import SIZE_PRESETS
+from settings_manager import KEYBOARD_LAYOUT_LABELS, SIZE_PRESET_LABELS, SIZE_PRESETS
 
 
 QSS = """
@@ -57,14 +57,6 @@ QPushButton#saveButton {
 """
 
 
-SIZE_LABELS = {"small": "小", "medium": "中", "large": "大"}
-LAYOUT_LABELS = {
-    "qwerty": "简化 QWERTY",
-    "main": "只显示主键区",
-    "shortcut": "只显示快捷键区",
-}
-
-
 class SettingsWindow(QDialog):
     saved = Signal()
 
@@ -72,7 +64,7 @@ class SettingsWindow(QDialog):
         super().__init__(parent)
         self.settings = settings
         self.startup_manager = startup_manager
-        self.setWindowTitle("KeyBear Companion Settings")
+        self.setWindowTitle("KeyBear Companion 设置")
         self.resize(840, 700)
         self.setMinimumSize(840, 560)
         self.setStyleSheet(QSS)
@@ -99,13 +91,14 @@ class SettingsWindow(QDialog):
 
         self.always_on_top = QCheckBox("窗口置顶")
         self.size_preset = QComboBox()
-        for value in SIZE_PRESETS:
-            self.size_preset.addItem(SIZE_LABELS.get(value, value), value)
+        for value, label in SIZE_PRESET_LABELS.items():
+            self.size_preset.addItem(label, value)
         self.overall_scale = self._double_spin(0.60, 1.15, 0.05)
         self.cat_size = self._spin(120, 320)
         self.bear_scale = self._double_spin(0.65, 1.15, 0.05)
         self.bear_y_offset = self._spin(-180, 100)
         self.keyboard_scale = self._double_spin(0.45, 0.95, 0.05)
+        self.size_preset.currentIndexChanged.connect(self._apply_size_preset_to_controls)
         self.show_cat = QCheckBox("显示小熊")
         self.show_keyboard = QCheckBox("显示键盘")
         self.edge_snap = QCheckBox("启用贴边吸附")
@@ -114,7 +107,7 @@ class SettingsWindow(QDialog):
         self.temporary_hide_minutes = self._spin(1, 60)
 
         self.keyboard_layout = QComboBox()
-        for value, label in LAYOUT_LABELS.items():
+        for value, label in KEYBOARD_LAYOUT_LABELS.items():
             self.keyboard_layout.addItem(label, value)
         self.keyboard_density = QComboBox()
         self.keyboard_density.addItems(["clean", "full"])
@@ -230,9 +223,20 @@ class SettingsWindow(QDialog):
         index = combo.findData(value)
         combo.setCurrentIndex(index if index >= 0 else 0)
 
+    def _apply_size_preset_to_controls(self):
+        preset = self.size_preset.currentData()
+        values = SIZE_PRESETS.get(preset)
+        if not values:
+            return
+        self.overall_scale.setValue(values["overall_scale"])
+        self.keyboard_scale.setValue(values["keyboard_scale"])
+        self.bear_scale.setValue(values["bear_scale"])
+
     def _load(self):
         self.always_on_top.setChecked(self.settings.get("always_on_top"))
+        self.size_preset.blockSignals(True)
         self._set_combo_data(self.size_preset, self.settings.get("size_preset"))
+        self.size_preset.blockSignals(False)
         self.overall_scale.setValue(self.settings.get("overall_scale"))
         self.cat_size.setValue(self.settings.get("cat_size"))
         self.bear_scale.setValue(self.settings.get("bear_scale"))

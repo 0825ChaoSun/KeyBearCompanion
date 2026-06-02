@@ -1,11 +1,12 @@
 import json
 from pathlib import Path
 
-from path_utils import resource_path, user_data_path
+from path_utils import APP_NAME, resource_path, user_data_path
 
 
 DEFAULT_SETTINGS_PATH = resource_path("settings.json")
 SETTINGS_PATH = user_data_path("settings.json")
+LOCAL_FALLBACK_SETTINGS_PATH = Path.cwd() / "user_data" / APP_NAME / "settings.json"
 
 SIZE_PRESETS = {
     "small": {"overall_scale": 0.70, "keyboard_scale": 0.55, "bear_scale": 0.75},
@@ -105,20 +106,14 @@ DEFAULT_SETTINGS = {
 }
 
 LEGACY_SIZE = {
-    "灏?": "small",
     "小": "small",
-    "涓?": "medium",
     "中": "medium",
-    "澶?": "large",
     "大": "large",
 }
 
 LEGACY_LAYOUT = {
-    "绠€鍖?QWERTY": "qwerty",
     "简化 QWERTY": "qwerty",
-    "鍙樉绀轰富閿尯": "main",
     "只显示主键区": "main",
-    "鍙樉绀哄揩鎹烽敭鍖?": "shortcut",
     "只显示快捷键区": "shortcut",
 }
 
@@ -126,23 +121,47 @@ LEGACY_LAYOUT = {
 class SettingsManager:
     """Load and persist KeyBear settings. Key logging is never enabled."""
 
-    def __init__(self, path=None):
+    def __init__(self, path=None, fallback_path=None):
         self.use_default_resource = path is None
         self.path = Path(path) if path is not None else SETTINGS_PATH
+        self.fallback_path = Path(fallback_path) if fallback_path is not None else LOCAL_FALLBACK_SETTINGS_PATH
         self.settings = DEFAULT_SETTINGS.copy()
         self.load()
 
     def load(self):
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        if self.use_default_resource and DEFAULT_SETTINGS_PATH.exists():
+        if not self._ensure_writable_parent(self.path):
+            self._switch_to_fallback("settings directory is not writable")
+        if self.use_default_resource and self._path_exists(DEFAULT_SETTINGS_PATH):
             self._merge_known(self._read_json(DEFAULT_SETTINGS_PATH))
-        if self.path.exists():
+        if self._path_exists(self.path):
             self._merge_known(self._read_json(self.path))
         self._normalize()
         self.save()
         print(f"[KeyBear] Default settings resource: {DEFAULT_SETTINGS_PATH}")
         print(f"[KeyBear] User settings path: {self.path}")
         return self.settings
+
+    def _ensure_writable_parent(self, path):
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            probe = path.parent / ".write_test"
+            probe.write_text("", encoding="utf-8")
+            probe.unlink(missing_ok=True)
+            return True
+        except OSError:
+            return False
+
+    def _path_exists(self, path):
+        try:
+            return path.exists()
+        except OSError:
+            return False
+
+    def _switch_to_fallback(self, reason):
+        if self.path != self.fallback_path:
+            print(f"[KeyBear] settings path fallback: {reason}; using {self.fallback_path}")
+            self.path = self.fallback_path
+            self.path.parent.mkdir(parents=True, exist_ok=True)
 
     def _read_json(self, path):
         try:
@@ -162,7 +181,10 @@ class SettingsManager:
         self.settings.update(SIZE_PRESETS[preset])
 
     def _normalize(self):
-        self.settings["size_preset"] = LEGACY_SIZE.get(self.settings.get("size_preset"), self.settings.get("size_preset"))
+        self.settings["size_preset"] = LEGACY_SIZE.get(
+            self.settings.get("size_preset"),
+            self.settings.get("size_preset"),
+        )
         if self.settings.get("size_preset") not in SIZE_PRESETS:
             self.settings["size_preset"] = "small"
 
@@ -205,7 +227,12 @@ class SettingsManager:
 
     def save(self):
         self._normalize()
-        self.path.write_text(json.dumps(self.settings, ensure_ascii=False, indent=2), encoding="utf-8")
+        payload = json.dumps(self.settings, ensure_ascii=False, indent=2)
+        try:
+            self.path.write_text(payload, encoding="utf-8")
+        except OSError as exc:
+            self._switch_to_fallback(str(exc))
+            self.path.write_text(payload, encoding="utf-8")
 
     def get(self, key, default=None):
         fallback = DEFAULT_SETTINGS.get(key, default)
@@ -213,6 +240,7 @@ class SettingsManager:
 
     def update(self, values):
         self.settings.update(values)
-        if "size_preset" in values:
+        explicit_scale_keys = {"overall_scale", "keyboard_scale", "bear_scale"}
+        if "size_preset" in values and not explicit_scale_keys.intersection(values):
             self.apply_size_preset(values["size_preset"])
         self.save()
