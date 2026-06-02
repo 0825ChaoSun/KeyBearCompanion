@@ -17,12 +17,21 @@ qin_build_en/
 tk_qin_build_en/
 qin_venv/
 packaging_tools/
+gcm_diag_*/
 
 # Keep only the qinliang lightweight release zip, not extracted runtime folders
 qinliang/qin/KeyBearCompanion/
 qinliang/qin/KeyBearCompanion-tk-qin-win64.zip
 qinliang/KeyBearCompanion.exe
 qin_pack_assets/
+
+# Old local packaging drafts, not part of the qinliang release
+KeyBearCompanion.spec
+KeyBearCompanionQin.spec
+KeyBearCompanionSlim.spec
+build_exe.ps1
+build_qin.ps1
+tests/
 
 # Raw/private source art and old large previews
 yier_assets/
