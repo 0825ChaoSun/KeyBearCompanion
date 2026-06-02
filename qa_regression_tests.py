@@ -2,8 +2,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from PySide6.QtCore import QPoint, QRect
+
 from keyboard_layout import KeyboardLayout
 from keyboard_listener import normalize_key_name
+from pet_keyboard_window import clamp_window_position, snap_window_position
 from settings_manager import SIZE_PRESETS, SettingsManager
 
 
@@ -73,6 +76,23 @@ class QinliangRegressionTests(unittest.TestCase):
         self.assertEqual(normalize_key_name("Key.backspace"), "Backspace")
         self.assertEqual(normalize_key_name("Key.shift_r"), "RightShift")
         self.assertEqual(normalize_key_name("'a'"), "A")
+
+    def test_drag_bounds_allow_crossing_between_two_monitors(self):
+        virtual_desktop = QRect(0, 0, 3840, 1080)
+
+        point_on_second_monitor = clamp_window_position(QPoint(2100, 100), 320, 240, virtual_desktop)
+        snapped_inside_second_monitor = snap_window_position(
+            QPoint(2100, 100),
+            320,
+            240,
+            virtual_desktop,
+            margin=24,
+            enabled=True,
+        )
+
+        self.assertEqual(point_on_second_monitor.x(), 2100)
+        self.assertEqual(snapped_inside_second_monitor.x(), 2100)
+        self.assertGreater(point_on_second_monitor.x(), 1920)
 
 
 if __name__ == "__main__":

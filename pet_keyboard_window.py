@@ -1,4 +1,4 @@
-from PySide6.QtCore import QPoint, Qt, Signal
+from PySide6.QtCore import QPoint, QRect, Qt, Signal
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import QApplication, QMenu, QWidget
 
@@ -24,6 +24,29 @@ QMenu::item:selected {
     background: #F4D2A0;
 }
 """
+
+
+def clamp_window_position(point, width, height, bounds):
+    max_x = max(bounds.left(), bounds.right() - width + 1)
+    max_y = max(bounds.top(), bounds.bottom() - height + 1)
+    return QPoint(min(max(point.x(), bounds.left()), max_x), min(max(point.y(), bounds.top()), max_y))
+
+
+def snap_window_position(point, width, height, bounds, margin, enabled=True):
+    point = clamp_window_position(point, width, height, bounds)
+    if not enabled:
+        return point
+    x_pos = point.x()
+    y_pos = point.y()
+    if abs(x_pos - bounds.left()) <= margin:
+        x_pos = bounds.left()
+    if abs((x_pos + width) - (bounds.right() + 1)) <= margin:
+        x_pos = bounds.right() - width + 1
+    if abs(y_pos - bounds.top()) <= margin:
+        y_pos = bounds.top()
+    if abs((y_pos + height) - (bounds.bottom() + 1)) <= margin:
+        y_pos = bounds.bottom() - height + 1
+    return QPoint(x_pos, y_pos)
 
 
 class PetKeyboardWindow(QWidget):
@@ -103,8 +126,14 @@ class PetKeyboardWindow(QWidget):
             self.keyboard.raise_()
 
     def _available_geometry(self):
-        screen = self.screen() or QApplication.primaryScreen()
-        return screen.availableGeometry()
+        screens = QApplication.screens()
+        if not screens:
+            screen = self.screen() or QApplication.primaryScreen()
+            return screen.availableGeometry()
+        geometry = QRect(screens[0].availableGeometry())
+        for screen in screens[1:]:
+            geometry = geometry.united(screen.availableGeometry())
+        return geometry
 
     def _place_bottom_right(self):
         screen = self._available_geometry()
@@ -121,28 +150,17 @@ class PetKeyboardWindow(QWidget):
         print(f"[KeyBear] restored window position: ({self.x()}, {self.y()})")
 
     def _clamp_point(self, point):
-        screen = self._available_geometry()
-        max_x = max(screen.left(), screen.right() - self.width() + 1)
-        max_y = max(screen.top(), screen.bottom() - self.height() + 1)
-        return QPoint(min(max(point.x(), screen.left()), max_x), min(max(point.y(), screen.top()), max_y))
+        return clamp_window_position(point, self.width(), self.height(), self._available_geometry())
 
     def _snap_point(self, point):
-        point = self._clamp_point(point)
-        if not self.settings.get("edge_snap_enabled"):
-            return point
-        screen = self._available_geometry()
-        margin = int(self.settings.get("edge_snap_margin", 24))
-        x_pos = point.x()
-        y_pos = point.y()
-        if abs(x_pos - screen.left()) <= margin:
-            x_pos = screen.left()
-        if abs((x_pos + self.width()) - (screen.right() + 1)) <= margin:
-            x_pos = screen.right() - self.width() + 1
-        if abs(y_pos - screen.top()) <= margin:
-            y_pos = screen.top()
-        if abs((y_pos + self.height()) - (screen.bottom() + 1)) <= margin:
-            y_pos = screen.bottom() - self.height() + 1
-        return QPoint(x_pos, y_pos)
+        return snap_window_position(
+            point,
+            self.width(),
+            self.height(),
+            self._available_geometry(),
+            int(self.settings.get("edge_snap_margin", 24)),
+            self.settings.get("edge_snap_enabled"),
+        )
 
     def save_window_position(self):
         if self.isVisible():
