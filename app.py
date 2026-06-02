@@ -1,7 +1,7 @@
 import sys
 import time
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QObject, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
@@ -13,6 +13,13 @@ from pet_keyboard_window import PetKeyboardWindow
 from settings_manager import SettingsManager
 from settings_window import SettingsWindow
 from startup_manager import StartupManager
+
+
+class KeyEventBridge(QObject):
+    """Moves pynput callbacks from the listener thread onto Qt's GUI thread."""
+
+    key_pressed = Signal(str)
+    key_released = Signal(str)
 
 
 def _prepare_source_assets(settings):
@@ -47,13 +54,14 @@ class KeyCatCompanion:
         self.temporary_hide_timer = QTimer(self.qt_app)
         self.temporary_hide_timer.setSingleShot(True)
         self.temporary_hide_timer.timeout.connect(self.restore_window)
+        self.key_events = KeyEventBridge()
         self.idle_detector = IdleDetector()
         self.animation = AnimationController(self.window, self.settings, self.idle_detector)
         self.startup = StartupManager()
         self.settings_window = SettingsWindow(self.settings, self.startup, self.window)
         self.listener = KeyboardListener(
-            self.handle_key_press,
-            self.handle_key_release,
+            self.key_events.key_pressed.emit,
+            self.key_events.key_released.emit,
             debug=self.settings.get("keyboard_debug") or test_keys,
         )
         self.recent_presses = []
@@ -74,6 +82,8 @@ class KeyCatCompanion:
         self.window.request_toggle_keyboard.connect(self.toggle_keyboard)
         self.window.request_temporary_hide.connect(self.temporary_hide)
         self.window.request_quit.connect(self.quit)
+        self.key_events.key_pressed.connect(self.handle_key_press)
+        self.key_events.key_released.connect(self.handle_key_release)
         self.settings_window.saved.connect(self.apply_settings)
         self.qt_app.aboutToQuit.connect(self.window.save_window_position)
         self.qt_app.aboutToQuit.connect(self.listener.stop)
