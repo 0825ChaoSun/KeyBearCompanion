@@ -41,7 +41,12 @@
   "speech_bubble_enabled": false,
   "start_on_boot": false,
   "record_keys": false,
-  "keyboard_debug": false
-  ,
+  "keyboard_debug": false,
+  "window_x": null,
+  "window_y": null,
+  "edge_snap_enabled": true,
+  "edge_snap_margin": 24,
+  "tray_enabled": true,
+  "temporary_hide_minutes": 5,
   "light_defaults_version": 1
 }
