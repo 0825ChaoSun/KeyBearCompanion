@@ -5,10 +5,9 @@ $Python = "D:\anaconda3\envs\tf\python.exe"
 $PackagingTools = Join-Path $ProjectRoot "packaging_tools"
 $BuildRoot = Join-Path $ProjectRoot "qinliang_build_en"
 $BuildSrc = Join-Path $BuildRoot "src"
-$OutputDir = Join-Path $ProjectRoot "qinliang"
+$OutputDir = Join-Path $ProjectRoot "dist"
 $ExePath = Join-Path $OutputDir "KeyBearCompanion.exe"
 $ZipPath = Join-Path $OutputDir "KeyBearCompanion-qinliang-win64.zip"
-$LegacyYierDirName = -join ([char[]](0x4e00, 0x4e8c, 0x5f62, 0x8c61))
 
 Set-Location $ProjectRoot
 
@@ -20,36 +19,40 @@ if (Test-Path -LiteralPath $BuildRoot) {
 }
 New-Item -ItemType Directory -Path $BuildSrc | Out-Null
 
-$excludeDirs = @(
-    ".git",
-    ".idea",
-    "__pycache__",
-    "build",
-    "dist",
-    "user_data",
-    "keybear_build_en",
-    "qinliang",
-    "qinliang_build_en",
-    "tmp_appdata_smoke",
-    $LegacyYierDirName
-)
-$excludeFiles = @(
-    "KeyBearCompanion-win64.zip",
-    "KeyBearCompanion-qinliang-win64.zip",
-    "PackagingSmoke.spec",
-    "packaging_smoke.py"
+$sourceFiles = @(
+    "main.py",
+    "app.py",
+    "animation_controller.py",
+    "cat_widget.py",
+    "idle_detector.py",
+    "keyboard_layout.py",
+    "keyboard_listener.py",
+    "path_utils.py",
+    "pet_keyboard_window.py",
+    "settings_manager.py",
+    "settings_window.py",
+    "startup_manager.py",
+    "virtual_keyboard.py",
+    "settings.json",
+    "KeyBearCompanionQinliang.spec"
 )
 
-Get-ChildItem -LiteralPath $ProjectRoot -Force | ForEach-Object {
-    if ($_.PSIsContainer) {
-        if ($excludeDirs -notcontains $_.Name) {
-            Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $BuildSrc $_.Name) -Recurse -Force
-        }
-    } else {
-        if ($excludeFiles -notcontains $_.Name) {
-            Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $BuildSrc $_.Name) -Force
-        }
+foreach ($name in $sourceFiles) {
+    $source = Join-Path $ProjectRoot $name
+    if (!(Test-Path -LiteralPath $source)) {
+        throw "Required build input is missing: $source"
     }
+    Copy-Item -LiteralPath $source -Destination (Join-Path $BuildSrc $name) -Force
+}
+
+$processedSource = Join-Path $ProjectRoot "assets\processed"
+$processedDestination = Join-Path $BuildSrc "assets\processed"
+if (!(Test-Path -LiteralPath $processedSource)) {
+    throw "Required processed assets are missing: $processedSource"
+}
+New-Item -ItemType Directory -Path $processedDestination -Force | Out-Null
+Get-ChildItem -LiteralPath $processedSource -File | ForEach-Object {
+    Copy-Item -LiteralPath $_.FullName -Destination $processedDestination -Force
 }
 
 Set-Location $BuildSrc
@@ -78,5 +81,5 @@ Compress-Archive -LiteralPath $ExePath -DestinationPath $ZipPath -Force
 $exeSize = [Math]::Round((Get-Item -LiteralPath $ExePath).Length / 1MB, 2)
 $zipSize = [Math]::Round((Get-Item -LiteralPath $ZipPath).Length / 1MB, 2)
 
-Write-Host "Built qinliang exe: $ExePath ($exeSize MB)"
-Write-Host "Built qinliang zip: $ZipPath ($zipSize MB)"
+Write-Host "Built exe: $ExePath ($exeSize MB)"
+Write-Host "Built zip: $ZipPath ($zipSize MB)"

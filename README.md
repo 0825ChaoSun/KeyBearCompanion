@@ -1,60 +1,104 @@
 # KeyBear Companion
 
-KeyBear Companion 是一个 Windows 桌面小熊键盘伴侣。
+KeyBear Companion 是一款 Windows 桌面交互式虚拟键盘伴侣。程序通过悬浮小熊与虚拟键盘实时反馈用户的键盘输入状态。
 
-它会在桌面上显示一只可爱的小熊和虚拟键盘。当用户按下真实键盘时，虚拟键盘会同步高亮，对应的小熊表情也会随输入状态变化，看起来像小熊正在陪你一起打字。
+## 核心功能
 
-当前仓库上传的是 `qinliang` 打包版：使用 PySide6 + pynput，并保留托盘图标、贴边吸附、临时隐藏和窗口位置保存等桌面体验。
-
-## 特点
-
-- 悬浮桌面窗口，轻量、不占屏幕
-- 虚拟键盘实时高亮
-- 小熊根据按键切换站立、按键、开心、惊讶、伤心、睡觉等状态
-- 支持保存窗口位置、贴边吸附、系统托盘图标和临时隐藏
-- 支持 Windows 运行
-- 打包压缩包放在 `qinliang/`
+- PySide6 无边框透明桌面悬浮窗口
+- 使用 pynput 实时监听并高亮常用按键
+- 区分左右 Shift、Ctrl 和 Alt
+- 根据普通键、特殊键、Backspace 和空闲状态切换小熊图片
+- 支持窗口位置保存、贴边吸附和多显示器拖动
+- 支持系统托盘、临时隐藏和可选开机启动
 - 不保存、不上传、不记录任何按键内容
 
-## 直接使用
+## 环境要求
 
-下载：
+- Windows 10 / 11
+- Python 3.10 或更高版本
 
-```text
-qinliang/KeyBearCompanion-qinliang-win64.zip
+安装依赖：
+
+```powershell
+python -m pip install -r requirements.txt
 ```
 
-解压后运行：
-
-```text
-KeyBearCompanion.exe
-```
-
-## 本地运行源码
+## 运行源码
 
 ```powershell
 python main.py
 ```
 
-需要安装：
+右键悬浮窗口可以打开设置或退出程序。
 
-```powershell
-pip install -r requirements.txt
+## 项目结构
+
+```text
+main.py                         程序入口
+app.py                          应用协调、Qt 信号桥与托盘管理
+pet_keyboard_window.py          主窗口、拖动、吸附和多显示器逻辑
+virtual_keyboard.py             虚拟键盘绘制与按键高亮
+keyboard_layout.py              键位布局与热区计算
+keyboard_listener.py            全局键盘监听与按键名称标准化
+cat_widget.py                   小熊完整状态图显示
+animation_controller.py         状态切换与睡眠逻辑
+settings_manager.py             设置加载、保存与容错
+settings_window.py              设置窗口
+asset_generator.py              缺失素材的源码模式回退生成
+transparent_processor.py        素材外围背景透明处理
+icon_processor.py               应用图标预处理
+assets/processed/               运行和打包使用的处理后素材
+qa_regression_tests.py          回归测试
+QA_TEST_REPORT.md               已验证缺陷与测试记录
+KeyBearCompanionQinliang.spec   PyInstaller 打包配置
+build_qinliang.ps1              Windows 打包脚本
 ```
 
-## 重新打包 qinliang
+## 测试
+
+```powershell
+python -m unittest qa_regression_tests -v
+python main.py --test-keys
+```
+
+`--test-keys` 会依次测试虚拟键盘高亮，不会记录输入内容。
+
+## 打包 Windows EXE
+
+打包脚本默认使用：
+
+```text
+D:\anaconda3\envs\tf\python.exe
+```
+
+首次打包前安装 PyInstaller：
+
+```powershell
+D:\anaconda3\envs\tf\python.exe -m pip install pyinstaller
+```
+
+执行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\build_qinliang.ps1
 ```
 
-输出：
+输出文件位于本地 `dist/` 目录：
 
 ```text
-qinliang/KeyBearCompanion.exe
-qinliang/KeyBearCompanion-qinliang-win64.zip
+dist/KeyBearCompanion.exe
+dist/KeyBearCompanion-qinliang-win64.zip
 ```
+
+`dist/` 不提交到源码仓库。正式安装包和压缩包应通过 GitHub Releases 发布。
+
+## 资源与设置
+
+- 程序运行时优先读取 `assets/processed/` 中的角色和键盘素材。
+- 默认设置保存在仓库中的 `settings.json`。
+- 用户修改后的设置保存到 `%APPDATA%\KeyBearCompanion\settings.json`。
+- 开机启动默认关闭，仅在用户主动开启后写入当前用户注册表。
 
 ## 隐私说明
 
-程序只实时监听按键用于动画同步，不保存、不上传、不记录任何按键内容。
+程序仅实时使用按键事件驱动虚拟键盘和小熊状态，不生成按键日志，不保存输入内容，也不上传任何数据。
