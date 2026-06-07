@@ -2,6 +2,22 @@
 
 KeyBear Companion 是一款 Windows 桌面交互式虚拟键盘伴侣。程序通过悬浮小熊与虚拟键盘实时反馈用户的键盘输入状态。
 
+## About
+
+一个基于 Python、PySide6 和 pynput 开发的 Windows 桌面交互式虚拟键盘伴侣。支持实时按键高亮、角色状态反馈、睡眠唤醒、多显示器拖动、托盘管理和窗口位置保存。程序不会记录或上传任何键盘输入内容。
+
+## 下载 Windows EXE
+
+仓库提供可直接运行的 Windows 单文件版本：
+
+```text
+release/KeyBearCompanion.exe
+```
+
+[下载 KeyBearCompanion.exe](./release/KeyBearCompanion.exe)
+
+下载后直接运行即可，无需安装 Python。Windows 首次运行未知来源程序时可能显示安全提示，请确认文件来自本仓库后再运行。
+
 ## 核心功能
 
 - PySide6 无边框透明桌面悬浮窗口
@@ -52,6 +68,7 @@ qa_regression_tests.py          回归测试
 QA_TEST_REPORT.md               已验证缺陷与测试记录
 KeyBearCompanionQinliang.spec   PyInstaller 打包配置
 build_qinliang.ps1              Windows 打包脚本
+release/KeyBearCompanion.exe    可直接运行的 Windows 发布版本
 ```
 
 ## 测试
@@ -90,7 +107,7 @@ dist/KeyBearCompanion.exe
 dist/KeyBearCompanion-qinliang-win64.zip
 ```
 
-`dist/` 不提交到源码仓库。正式安装包和压缩包应通过 GitHub Releases 发布。
+`dist/` 是本地打包输出目录，不提交到源码仓库。需要上传的独立 EXE 放在 `release/` 目录中。
 
 ## 资源与设置
 
