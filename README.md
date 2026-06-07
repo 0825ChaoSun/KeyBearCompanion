@@ -2,10 +2,6 @@
 
 KeyBear Companion 是一款 Windows 桌面交互式虚拟键盘伴侣。程序通过悬浮小熊与虚拟键盘实时反馈用户的键盘输入状态。
 
-## About
-
-一个基于 Python、PySide6 和 pynput 开发的 Windows 桌面交互式虚拟键盘伴侣。支持实时按键高亮、角色状态反馈、睡眠唤醒、多显示器拖动、托盘管理和窗口位置保存。程序不会记录或上传任何键盘输入内容。
-
 ## 下载 Windows EXE
 
 仓库提供可直接运行的 Windows 单文件版本：
