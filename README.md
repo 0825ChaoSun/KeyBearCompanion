@@ -115,3 +115,8 @@ dist/KeyBearCompanion-qinliang-win64.zip
 ## 隐私说明
 
 程序仅实时使用按键事件驱动虚拟键盘和小熊状态，不生成按键日志，不保存输入内容，也不上传任何数据。
+
+## 许可证
+
+- 项目源代码采用 [MIT License](./LICENSE)。
+- `assets/processed/` 中的角色、键盘和图标素材不属于 MIT License，相关权利说明见 [ASSET_LICENSE.md](./ASSET_LICENSE.md)。
